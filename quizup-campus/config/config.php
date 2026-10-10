@@ -24,13 +24,3 @@ return [
     'xp_per_level'         => 100,
 ];
 
-/**
- * Copy this file to config.local.php and fill in your real hosting details.
- * config.local.php is ignored by Git, so your password never reaches GitHub.
- */
-return [
-    'db_host' => 'sql112.infinityfree.com',   // from InfinityFree > MySQL Databases
-    'db_name' => 'if0_42886831_quizup_campus',
-    'db_user' => 'if0_42886831',
-    'db_pass' => '',
-];
