@@ -1,36 +1,60 @@
 <?php
 /**
- * QuizUp Campus - configuration
- * Local (AMPPS) defaults are below. When you host online (InfinityFree),
- * replace the database values with the ones from your hosting control panel.
+ * QuizUp Campus - Configuration & Database Connection Loader
  */
-return [
-    'app_name' => 'QuizUp Campus',
 
-    // ---- Database ----
-    // AMPPS default: host localhost, user root, password mysql
-    'db_host' => 'localhost',
-    'db_name' => 'quizup_campus',
-    'db_user' => 'root',
-    'db_pass' => 'mysql',
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-    // ---- Game rules ----
-    'questions_per_quiz'   => 8,
-    'seconds_per_question' => 20,
-    'xp_per_correct'       => 10,
-    'xp_completion'        => 5,
-    'xp_perfect_bonus'     => 20,
-    'xp_hint_penalty'      => 2,
-    'xp_per_level'         => 100,
+// 1. Load default settings (local/AMPPS defaults)
+$default_config = [
+    'app_name'               => 'QuizUp Campus',
+    'db_host'                => 'localhost',
+    'db_name'                => 'quizup_campus',
+    'db_user'                => 'root',
+    'db_pass'                => 'mysql', // Change to '' if your AMPPS requires no password
+    'questions_per_quiz'     => 8,
+    'seconds_per_question'   => 20,
+    'xp_per_correct'         => 10,
+    'xp_completion'          => 5,
+    'xp_perfect_bonus'       => 20,
+    'xp_hint_penalty'        => 2,
+    'xp_per_level'           => 100,
 ];
 
-/**
- * Copy this file to config.local.php and fill in your real hosting details.
- * config.local.php is ignored by Git, so your password never reaches GitHub.
- */
-return [
-    'db_host' => 'sql112.infinityfree.com',   // from InfinityFree > MySQL Databases
-    'db_name' => 'if0_42886831_quizup_campus',
-    'db_user' => 'if0_42886831',
-    'db_pass' => 'jnmd24043004',
-];
+// 2. Check if a local override file exists (used for live hosting / InfinityFree)
+$local_config_file = __DIR__ . '/config.local.php';
+if (file_exists($local_config_file)) {
+    $local_config = include $local_config_file;
+    if (is_array($local_config)) {
+        // Merge local settings over defaults
+        $config = array_merge($default_config, $local_config);
+    } else {
+        $config = $default_config;
+    }
+} else {
+    $config = $default_config;
+}
+
+// Make config globally accessible if needed
+global $config;
+
+// 3. Establish PDO Database Connection
+try {
+    $dsn = "mysql:host={$config['db_host']};dbname={$config['db_name']};charset=utf8mb4";
+    $pdo = new PDO($dsn, $config['db_user'], $config['db_pass'], [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ]);
+} catch (PDOException $e) {
+    error_log("Database Connection Error: " . $e->getMessage());
+    http_response_code(500);
+    die("<div style='font-family: Arial, sans-serif; padding: 20px; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; max-width: 600px; margin: 40px auto;'>
+            <h3>⚠️ Database Connection Failed</h3>
+            <p>Could not connect to database <code>{$config['db_name']}</code> on host <code>{$config['db_host']}</code>.</p>
+            <p style='font-size: 0.9em; color: #555;'>Technical details: " . htmlspecialchars($e->getMessage()) . "</p>
+         </div>");
+}
+?>
