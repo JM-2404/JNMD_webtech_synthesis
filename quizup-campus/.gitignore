@@ -1,0 +1,5 @@
+# Private hosting passwords live in config/config.local.php - never commit it
+config/config.local.php
+.DS_Store
+Thumbs.db
+*.log
